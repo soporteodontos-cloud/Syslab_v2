@@ -1,0 +1,74 @@
+{% extends "menu.html" %}
+{% load tags %}
+{% load static %}
+
+{% block title %} Especialidades {% endblock %}
+
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'css/bootstrapt.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dataTables.bootstrap4.min.css' %}">
+    <script src="{% static 'js/util.js' %}"></script>
+
+    <div class="form-row">
+        <form action="" method="get">
+            <a class="btn btn-sm btn-success" href="{% url 'especialidad_create' %}"> Nueva Especialidad </a>
+        </form>
+    </div>
+    <br>
+    <table id="asegurados" class="table table-striped table-bordered" style="width:100%" data-server-side="true">
+      <thead>
+        <tr>
+          <th>Descripcion</th>
+          <th>Categoría</th>
+          <th>Creado Por</th>
+          <th>Creado el</th>
+          <th>realID</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+    </table>
+
+    <script src="{% static 'js/jquery-1.12.4.js' %}"></script>
+  <script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+  <script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
+  <script>
+      $(document).ready(function() {
+          $('#asegurados').DataTable({
+              "language": lenguaje,
+              "serverSide": true,
+              "ajax": '/rest/esp-list-intra/?format=datatables',
+              columnDefs: [
+                {
+                    "targets": -1,
+                    "orderable": false,
+                    "searchable": false,
+                },
+                {
+                    "targets": 1,
+                    "defaultContent": ''
+                },
+                {
+                    "targets": 4,
+                    "visible": false
+                },
+
+              ],
+              order: [[4, 'desc']],
+              "columns": [
+                  {'data': 'descripcion'},
+                  {'data': 'categoria.descripcion'},
+                  {'data': 'creado_por.username'},
+                  {'data': 'creado_el'},
+                  {'data': 'id'},
+                  {'data': function ( row, type, val, meta ) {
+                        return '<a type="button" href="/especialidad/update/'+row.id+'/" class="btn btn-warning btn-sm">Modificar</a> ' +
+                            '<a type="button" href="/especialidad/delete/'+row.id+'/" class="btn btn-danger btn-sm">Borrar</a> ' +
+                            '<a type="button" href="/especialidad/fase/'+row.id+'/" class="btn btn-info btn-sm">Fases</a>';
+                    }
+                  },
+                ],
+          });
+      });
+  </script>
+{% endblock %}

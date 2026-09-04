@@ -1,0 +1,60 @@
+{% extends "menu.html" %}
+
+{% load static %}
+
+{% load bootstrap4 %}
+
+{% bootstrap_css %}
+{% bootstrap_javascript jquery='full' %}
+
+{% block title %}Grupos{% endblock %}
+
+{% block subtitle %}Permisos{% endblock %}
+
+{% block content %}
+    <div class="col-sm-12">
+        <script src="{% static 'js/grupos/permisos.js' %}"></script>
+        {% csrf_token %}
+        <h2><b>Grupo</b>: {{ usuario }}</h2>
+        <input type="hidden" value="{{ usuario.pk }}" id="usuario">
+        <table>
+            <tr>
+                <th>
+                    Permisos Disponibles
+                </th>
+                <th>
+                    Permisos del Grupo
+                </th>
+            </tr>
+            <tr>
+                <td style="width: 370px;">
+                    <select multiple="multiple" id="id_user_permissions_all" style="width: 350px;height: 250px">
+                        {% for permiso in permisos %}
+                            <option value="{{ permiso.id }}">{{ permiso }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td style="width: 350px;">
+                    <select multiple="multiple" id="id_user_permissions_added" style="width: 350px;height: 250px">
+                        {% for permiso in permisos_usuario %}
+                            <option value="{{ permiso.id }}">{{ permiso }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align: center;vertical-align: middle;">
+                    <a class="btn btn-info btn-sm" title="Remover Todos" onclick="removeall();"> << </a>
+                    <a class="btn btn-info btn-sm" title="Remover" onclick="remove();"> < </a>
+                    <a class="btn btn-info btn-sm" title="Agregar" onclick="add();"> > </a>
+                    <a class="btn btn-info btn-sm" title="Agregar Todos" onclick="addall();"> >> </a>
+                </td>
+            </tr>
+        </table>
+        {% buttons %}
+            <a onclick="save(this.id);" class="btn btn-success">Guardar</a>
+            <a class="btn btn-primary" href="{% url 'listado_grupos' %}">Volver</a>
+        {% endbuttons %}
+    </div>
+
+{% endblock %}

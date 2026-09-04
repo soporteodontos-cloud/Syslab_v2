@@ -1,0 +1,120 @@
+{% extends "menu.html" %}
+{% load tags %}
+{% load static %}
+{% load bootstrap4 %}
+{% load crispy_forms_tags %}
+
+
+{% block title %} Trabajos por área {% endblock %}
+
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'css/bootstrapt.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dataTables.bootstrap4.min.css' %}">
+    <link rel="stylesheet" href="{% static 'datatables/buttons.dataTables.min.css' %}">
+    <script src="{% static 'js/util.js' %}"></script>
+    <link href="/static/vendor/select2/dist/css/select2.css" type="text/css" media="screen" rel="stylesheet">
+    <link href="/static/admin/css/autocomplete.css" type="text/css" media="screen" rel="stylesheet">
+    <link href="/static/autocomplete_light/select2.css" type="text/css" media="screen" rel="stylesheet">
+    <script src="/static/autocomplete_light/jquery.init.js"></script>
+    <!--script src="/static/vendor/select2/dist/js/select2.full.js"></script>
+    <script src="/static/vendor/select2/dist/js/i18n/es.js"></script-->
+    <script src="/static/autocomplete_light/autocomplete.init.js"></script>
+    <script src="/static/autocomplete_light/forward.js"></script>
+    <script src="/static/autocomplete_light/select2.js"></script>
+    <script src="/static/autocomplete_light/jquery.post-setup.js"></script>
+
+
+    {{ form.media }}
+    <style>
+        .select2-container .select2-selection--single {
+            height: 36px;
+        }
+    .select2-container {
+         min-width: 10em;
+    }
+    </style>
+    <script type="text/javascript">
+    var table = null;
+    var clinica = null;
+    var especialidad = null;
+    var paciente = null;
+    var tipoTrabajo = null;
+      $(document).bind('change', function (e) {
+        console.log(e.target.name)
+        if (e.target.name == 'clinicaExterna'){
+          clinica = parseInt(e.target.value);
+        } else if (e.target.name == 'especialidad'){
+          especialidad = parseInt(e.target.value);
+        } else if (e.target.name == 'paciente'){
+          paciente = parseInt(e.target.value);
+        } else if (e.target.name == 'tipoTrabajo'){
+          tipoTrabajo = parseInt(e.target.value);
+        }
+     });
+
+    </script>
+    <div class="form-row">
+        <div class="card shadow">
+            <div class="card-body">
+                <div class="row">
+                    {% for field in form %}
+                        <div class="form-group col-md-4 mb-0">
+                            {{ field|as_crispy_field }}
+                        </div>
+                    {% endfor %}
+                    <div class="form-group col-md-2 mb-0">
+                        <button class="btn btn-sm btn-primary" style="margin-top: 28px;" onclick="table.ajax.reload();"> Buscar </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <table id="reporte" class="table table-striped table-bordered" style="width:100%" data-server-side="true">
+      <thead>
+        <tr>
+          <th>Area</th>
+          <th>Cantidad</th>
+        </tr>
+      </thead>
+    </table>
+
+  <script src="{% static 'js/jquery-1.12.4.js' %}"></script>
+  <script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+  <script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
+  <script src="{% static 'datatables/dataTables.buttons.min.js' %}"></script>
+  <script src="{% static 'datatables/jszip.min.js' %}"></script>
+  <script src="{% static 'datatables/pdfmake.min.js' %}"></script>
+  <script src="{% static 'datatables/vfs_fonts.js' %}"></script>
+  <script src="{% static 'datatables/buttons.html5.min.js' %}"></script>
+  <script src="{% static 'datatables/buttons.print.min.js' %}"></script>
+  <script>
+      $(document).ready(function() {
+          table = $('#reporte').DataTable({
+              "language": lenguaje,
+              "serverSide": true,
+              "searching": false,
+              "paging": false,
+              "info": false,
+              "ajax": {
+                "url": '/informes/gettrabajoarea',
+                "data": function ( d ) {
+                    d.cdesde = $('#id_cargaDesde').val();
+                    d.chasta = $('#id_cargaHasta').val();
+                    d.edesde = $('#id_entregaDesde').val();
+                    d.ehasta = $('#id_entregaHasta').val();
+                },
+              },
+              "columns": [
+                  {'data': 'area'},
+                  {'data': 'cantidad'},
+              ],
+              dom: 'Bfrtip',
+              buttons: [
+                   'copy', 'csv', 'excel', 'pdf', 'print'
+              ]
+          });
+      });
+  </script>
+{% endblock %}

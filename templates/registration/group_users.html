@@ -1,0 +1,60 @@
+{% extends "menu.html" %}
+
+{% load static %}
+
+{% load bootstrap4 %}
+
+{% bootstrap_css %}
+{% bootstrap_javascript jquery='full' %}
+
+{% block title %}Grupos{% endblock %}
+
+{% block subtitle %}Usuarios{% endblock %}
+
+{% block content %}
+    <div class="col-sm-12">
+        <script src="{% static 'js/grupos/usuarios.js' %}"></script>
+        {% csrf_token %}
+        <h2><b>Grupo</b>: {{ grupo }}</h2>
+        <input type="hidden" value="{{ grupo.pk }}" id="grupo">
+        <table>
+            <tr>
+                <th>
+                    Usuarios Disponibles
+                </th>
+                <th>
+                    Usuarios del Grupo
+                </th>
+            </tr>
+            <tr>
+                <td style="width: 370px;">
+                    <select multiple="multiple" id="id_group_users_all" style="width: 350px;height: 250px">
+                        {% for usuario in usuarios %}
+                            <option value="{{ usuario.id }}">{{ usuario }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td style="width: 350px;">
+                    <select multiple="multiple" id="id_group_users_added" style="width: 350px;height: 250px">
+                        {% for usuario in usuarios_grupo %}
+                            <option value="{{ usuario.id }}">{{ usuario }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align: center;vertical-align: middle;">
+                    <a class="btn btn-info btn-sm" title="Remover Todos" onclick="removeall();"><i class="fa fa-fast-backward" aria-hidden="true"></i></a>
+                    <a class="btn btn-info btn-sm" title="Remover" onclick="remove();"><i class="fa fa-backward" aria-hidden="true"></i></a>
+                    <a class="btn btn-info btn-sm" title="Agregar" onclick="add();"><i class="fa fa-forward" aria-hidden="true"></i></a>
+                    <a class="btn btn-info btn-sm" title="Agregar Todos" onclick="addall();"><i class="fa fa-fast-forward" aria-hidden="true"></i></a>
+                </td>
+            </tr>
+        </table>
+        {% buttons %}
+            <a onclick="save(this.id);" class="btn btn-success">Guardar</a>
+            <a class="btn btn-primary" href="{% url 'listado_grupos' %}">Volver</a>
+        {% endbuttons %}
+    </div>
+
+{% endblock %}

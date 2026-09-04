@@ -1,0 +1,1088 @@
+{% extends "menu.html" %}
+{% load tags %}
+{% load static %}
+{% load bootstrap4 %}
+{% load crispy_forms_tags %}
+
+
+{% block title %} Orden de Trabajo {% endblock %}
+
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'css/bootstrapt.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dataTables.bootstrap4.min.css' %}">
+    <script src="{% static 'js/util.js' %}"></script>
+    <link href="/static/vendor/select2/dist/css/select2.css" type="text/css" media="screen" rel="stylesheet">
+    <link href="/static/admin/css/autocomplete.css" type="text/css" media="screen" rel="stylesheet">
+    <link href="/static/autocomplete_light/select2.css" type="text/css" media="screen" rel="stylesheet">
+    <script src="/static/autocomplete_light/jquery.init.js"></script>
+    <!--script src="/static/vendor/select2/dist/js/select2.full.js"></script>
+    <script src="/static/vendor/select2/dist/js/i18n/es.js"></script-->
+    <script src="/static/autocomplete_light/autocomplete.init.js"></script>
+    <script src="/static/autocomplete_light/forward.js"></script>
+    <script src="/static/autocomplete_light/select2.js"></script>
+    <script src="/static/autocomplete_light/jquery.post-setup.js"></script>
+
+
+    {{ form.media }}
+    <style>
+        .select2-container .select2-selection--single {
+            height: 36px;
+        }
+
+        .select2-container {
+            min-width: 10em;
+        }
+
+        /* The slider */
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #2196F3;
+        }
+
+        input:checked + .slider:before {
+            -webkit-transform: translateX(26px);
+            -ms-transform: translateX(26px);
+            transform: translateX(26px);
+        }
+
+        /* Rounded sliders */
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+    </style>
+    <script type="text/javascript">
+        var table = null;
+        var clinica = null;
+        var especialidad = null;
+        var paciente = null;
+        var tipoTrabajo = null;
+        var insumos = false;
+        var vendedor = null;
+        var desde = null;
+        var hasta = null;
+        var particulares = null;
+        var odontos = null;
+        var area = null;
+        var estado = null;
+        $(document).bind('change', function (e) {
+            console.log(e.target.name)
+            if (e.target.name == 'clinicaExterna') {
+                if (e.target.value.length > 0)
+                    clinica = parseInt(e.target.value);
+                else
+                    clinica = null;
+            } else if (e.target.name == 'especialidad') {
+                if (e.target.value.length > 0)
+                    especialidad = parseInt(e.target.value);
+                else
+                    especialidad = null;
+            } else if (e.target.name == 'paciente') {
+                if (e.target.value.length > 0)
+                    paciente = parseInt(e.target.value);
+                else
+                    paciente = null;
+            } else if (e.target.name == 'tipoTrabajo') {
+                if (e.target.value.length > 0)
+                    tipoTrabajo = parseInt(e.target.value);
+                else
+                    tipoTrabajo = null;
+            } else if (e.target.name == 'insumos') {
+                insumos = $('#id_insumos').is(':checked');
+            } else if (e.target.name == 'vendedor') {
+                if (e.target.value.length > 0)
+                    vendedor = parseInt(e.target.value);
+                else
+                    vendedor = null;
+            } else if (e.target.name == 'desde') {
+                desde = $('#id_desde').val();
+            } else if (e.target.name == 'hasta') {
+                hasta = $('#id_hasta').val();
+            } else if (e.target.name == 'particulares') {
+                particulares = $('#id_particulares').is(':checked');
+            } else if (e.target.name == 'odontos') {
+                odontos = $('#id_odontos').is(':checked');
+            } else if (e.target.name == 'area') {
+                area = $('#id_area').val();
+            } else if (e.target.name == 'estado') {
+                estado = $('#id_estado').val();
+            }
+        });
+
+
+    </script>
+
+    <div class="form-row">
+        <div class="card shadow mb-12">
+            <div class="card-body">
+                <div class="row">
+                    {% for field in form %}
+                        <div class="form-group col-md-2 mb-0">
+                            {{ field|as_crispy_field }}
+                        </div>
+                    {% endfor %}
+                    <div class="form-group col-md-2 mb-0">
+                        <button class="btn btn-sm btn-primary" style="margin-top: 28px;" onclick="table.ajax.reload();">
+                            Buscar
+                        </button>
+                    </div>
+                    {% if permiso == "Logistica" %}
+                        <div class="form-group col-md-2 mb-0">
+                            <a class="btn btn-sm btn-success" style="margin-top: 28px;" href="{% url 'orden_create' %}">
+                                Nueva Orden de Trabajo </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <br>
+    <table id="asegurados" class="table table-striped table-bordered" style="width:100%" data-server-side="true">
+        <thead>
+        <tr>
+            {% if permiso == "Logistica" %}
+                <th></th>
+                <th></th>
+                <th>Trabajo</th>
+                <th>Acciones</th>
+                <th>Reenvio</th>
+                <th>Sucursal/Particular</th>
+                <th>Paciente</th>
+                <th>Tipo de Trabajo</th>
+                <th>Estado</th>
+                <th>Area</th>
+                <th>Factura Nº</th>
+                <th>Fecha Solicitud</th>
+                <th>Fecha Entrega</th>
+                <th>Nº Carnet</th>
+                <th>Cantidad</th>
+                <th>Fecha Estado</th>
+            {% elif permiso == "Vendedores" %}
+                <th></th>
+                <th></th>
+                <th>Trabajo</th>
+                <th>Acciones</th>
+                <th>Vendedor</th>
+                <th>Reenvio</th>
+                <th>Sucursal/Particular</th>
+                <th>Paciente</th>
+                <th>Tipo de Trabajo</th>
+                <th>Estado</th>
+                <th>Area</th>
+                <th>Factura Nº</th>
+                <th>Fecha Solicitud</th>
+                <th>Fecha Entrega</th>
+                <th>Nº Carnet</th>
+                <th>Cantidad</th>
+                <th>Fecha Estado</th>
+            {% elif permiso == "Preparador" %}
+                <th></th>
+                <th>Trabajo</th>
+                <th>Sucursal/Particular</th>
+                <th>Fecha Entrega</th>
+                <th>Paciente</th>
+                <th>Odontólogo</th>
+                <th>Tipo de Trabajo</th>
+                <th>Acciones</th>
+            {% elif permiso == "Carga de insumos" %}
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th>Trabajo</th>
+                <th>Sucursal/Particular</th>
+                <th>Fecha Solicitud</th>
+                <th>Fecha Entrega</th>
+                <th>Paciente</th>
+                <th>Cantidad</th>
+                <th>Color</th>
+                <th>Maxilar</th>
+                <th>Dientes</th>
+                <th>Tipo de Trabajo</th>
+                <th>Reenvio</th>
+                <th>Acciones</th>
+            {% elif permiso == "Supervisor Tecnico" %}
+                <th></th>
+                <th></th>
+                <th></th>
+                <th>Sector</th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th>Trabajo</th>
+                <th>Acciones</th>
+                <th>Estado</th>
+                <th>Tecnico</th>
+                <th>Fecha Solicitud</th>
+                <th>Fecha Entrega</th>
+                <th>Sucursal/Particular</th>
+                <th>Paciente</th>
+                <th>Cantidad</th>
+                <th>Color</th>
+                <th>Maxilar</th>
+                <th>Dientes</th>
+                <th>Tipo de Trabajo</th>
+                <th>Fecha Estado</th>
+            {% elif permiso == "Tecnico" or permiso == "Administrador" %}
+                <th></th>
+                <th></th>
+                <th></th>
+                <th>Sector</th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th></th>
+                <th>Trabajo</th>
+                <th>Acciones</th>
+                <th>Estado</th>
+                <th>Tecnico</th>
+                <th>Fecha Solicitud</th>
+                <th>Fecha Entrega</th>
+                <th>Sucursal/Particular</th>
+                <th>Paciente</th>
+                <th>Cantidad</th>
+                <th>Color</th>
+                <th>Maxilar</th>
+                <th>Dientes</th>
+                <th>Tipo de Trabajo</th>
+                <th>Fecha Estado</th>
+            {% endif %}
+        </tr>
+        </thead>
+    </table>
+    <script src="{% static 'js/jquery-1.12.4.js' %}"></script>
+    <script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
+    <script>
+        $(document).ready(function () {
+            {% if especialidad %}
+                especialidad = parseInt({{ especialidad }});
+            {% endif %}
+
+            {% if clinica %}
+                clinica = parseInt({{ clinica }});
+            {% endif %}
+
+            {% if tipoTrabajo %}
+                tipoTrabajo = parseInt({{ tipoTrabajo }});
+            {% endif %}
+
+            {% if paciente %}
+                paciente = parseInt({{ paciente }});
+            {% endif %}
+
+            {% if desde %}
+                desde = {{ desde }};
+            {% endif %}
+
+            {% if hasta %}
+                hasta = {{ hasta }};
+            {% endif %}
+
+            {% if particulares == True %}
+                particulares = true;
+            {% else %}
+                particulares = false;
+            {% endif %}
+
+            {% if odontos == True %}
+                odontos = true;
+            {% else %}
+                odontos = false;
+            {% endif %}
+
+            {% if insumos == True %}
+                insumos = true;
+            {% else %}
+                insumos = false;
+            {% endif %}
+
+            {% if estado %}
+                estado = '{{ estado }}';
+            {% endif %}
+
+            {% if area %}
+                area = '{{ area }}';
+            {% endif %}
+
+            {% if permiso == "Logistica" %}
+                table = $('#asegurados').DataTable({
+                    "language": lenguaje,
+                    "serverSide": true,
+                    "searching": false,
+                    "scrollX": true,
+                    "pageLength": 25,
+                    "lengthMenu": [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                    "ajax": {
+                        "url": '/rest/ord-list-intra/?format=datatables&permiso={{ permiso }}',
+                        "data": function (d) {
+                            d.desde = desde;
+                            d.hasta = hasta;
+                            d.trabajo = $('#id_orden').val();
+                            d.clinica = clinica;
+                            d.especialidad = especialidad;
+                            d.paciente = paciente;
+                            d.tipoTrabajo = tipoTrabajo;
+                            d.particulares = particulares;
+                            d.odontos = odontos;
+                            d.area = area;
+                            d.estado = estado;
+                        },
+                    },
+                    columnDefs: [
+                        {
+                            "targets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 13, 14, 15],
+                            "orderable": false
+                        },
+                        {
+                            "targets": [0, 1],
+                            "visible": false
+                        },
+                    ],
+                    "columns": [
+                        {'data': 'dia_entrega'},
+                        {'data': 'estado'},
+                        {'data': 'id'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                var btn = '';
+                                btn += '<a type="button" href="/ordenes/history/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-info btn-sm">Historial</a> ' +
+                                    '<a type="button" href="/ordenes/update/' + row.orden.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-success btn-sm">Ver</a> ';
+                                if (row.estado == "PENDIENTE DE RETIRO/ENTREGA") {
+                                    btn += '<a type="button" href="/ordenes/workorder/entrega/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-primary btn-sm">Entregar Trabajo</a> ';
+                                }
+                                if (row.estado == "RECHAZADO") {
+                                    btn += '<a type="button" href="/ordenes/workorder/entregar/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-primary btn-sm">Entregar Trabajo Rechazado</a> ';
+                                }
+                                if (row.estado != "TRABAJO RECHAZADO ENTREGADO" || row.estado != "TRABAJO ENTREGADO") {
+                                    btn += '<a type="button" href="/ordenes/update1/' + row.orden.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-warning btn-sm">Editar Datos</a> ';
+                                }
+                                if (row.estado == 'NO CONFIRMADO' && row.trabajo != '') {
+                                    btn += '<a type="button" href="/ordenes/workorder/recepcionar/' + row.orden.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-primary btn-sm">Recepcionar</a> ';
+                                }
+                                return btn;
+                            }
+                        },
+                        {'data': 'orden.metodoEnvio'},
+                        {'data': 'orden.clinicaExterna.nombreClinica'},
+                        {'data': 'orden.paciente.nombreApellido'},
+                        {'data': 'trabajo'},
+                        {'data': 'estado'},
+                        {'data': 'area'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                return '';
+                            }
+                        },
+                        {'data': 'orden.fechaSolicitud'},
+                        {'data': 'fechaEntrega'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                return '';
+                            }
+                        },
+                        {'data': 'cantidad'},
+                        {'data': 'ultimo_cambio'},
+                    ],
+                    rowCallback: function (row, data) {
+                        if (data.dia_entrega <= 0) {
+                            $(row).css({'background-color': '#FD8A8A'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                        if (data.dia_entrega == 1) {
+                            $(row).css({'background-color': '#FCF9BE'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                    },
+                });
+            {% elif permiso == "Vendedores" %}
+                table = $('#asegurados').DataTable({
+                    "language": lenguaje,
+                    "serverSide": true,
+                    "searching": false,
+                    "scrollX": true,
+                    "pageLength": 25,
+                    "lengthMenu": [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                    "ajax": {
+                        "url": '/rest/ord-list-intra/?format=datatables&permiso={{ permiso }}',
+                        "data": function (d) {
+                            d.desde = desde;
+                            d.hasta = hasta;
+                            d.trabajo = $('#id_orden').val();
+                            d.clinica = clinica;
+                            d.especialidad = especialidad;
+                            d.paciente = paciente;
+                            d.tipoTrabajo = tipoTrabajo;
+                            d.vendedor = vendedor;
+                            d.particulares = particulares;
+                            d.odontos = odontos;
+                            d.area = area;
+                            d.estado = estado;
+                        },
+                    },
+                    columnDefs: [
+                        {
+                            "targets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 14, 15, 16],
+                            "orderable": false
+                        },
+                        {
+                            "targets": [0, 1],
+                            "visible": false
+                        },
+                    ],
+                    "columns": [
+                        {'data': 'dia_entrega'},
+                        {'data': 'estado'},
+                        {'data': 'id'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                var btn = '';
+                                btn += '<a type="button" href="/ordenes/history/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-info btn-sm">Historial</a> ';
+                                return btn;
+                            }
+                        },
+                        {'data': 'orden.vendedor.nombreApellido'},
+                        {'data': 'orden.metodoEnvio'},
+                        {'data': 'orden.clinicaExterna.nombreClinica'},
+                        {'data': 'orden.paciente.nombreApellido'},
+                        {'data': 'trabajo'},
+                        {'data': 'estado'},
+                        {'data': 'area'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                return '';
+                            }
+                        },
+                        {'data': 'orden.fechaSolicitud'},
+                        {'data': 'fechaEntrega'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                return '';
+                            }
+                        },
+                        {'data': 'cantidad'},
+                        {'data': 'ultimo_cambio'},
+                    ],
+                    rowCallback: function (row, data) {
+                        if (data.dia_entrega <= 0) {
+                            $(row).css({'background-color': '#FD8A8A'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                        if (data.dia_entrega == 1) {
+                            $(row).css({'background-color': '#FCF9BE'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                    },
+                });
+            {% elif permiso == "Preparador" %}
+                table = $('#asegurados').DataTable({
+                    "language": lenguaje,
+                    "serverSide": true,
+                    "searching": false,
+                    //"ordering": false,
+                    "scrollX": true,
+                    "pageLength": 25,
+                    "lengthMenu": [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                    "ajax": {
+                        "url": '/rest/ord-list-intra/?format=datatables&permiso={{ permiso }}',
+                        "data": function (d) {
+                            d.desde = desde;
+                            d.hasta = hasta;
+                            d.trabajo = $('#id_orden').val();
+                            d.clinica = clinica;
+                            d.especialidad = especialidad;
+                            d.paciente = paciente;
+                            d.tipoTrabajo = tipoTrabajo;
+                            d.particulares = particulares;
+                            d.odontos = odontos;
+                            d.area = area;
+                            d.estado = estado;
+                        },
+                    },
+                    columnDefs: [
+                        {
+                            "targets": 0,
+                            "visible": false
+                        },
+                        {
+                            "targets": [0, 1, 2, 4, 5, 6, 7],
+                            "orderable": false
+                        },
+                    ],
+                    "columns": [
+                        {'data': 'dia_entrega'},
+                        {'data': 'id'},
+                        {'data': 'orden.clinicaExterna.nombreClinica'},
+                        {'data': 'fechaEntrega'},
+                        {'data': 'orden.paciente.nombreApellido'},
+                        {'data': 'odontologo'},
+                        {'data': 'trabajo'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                return '<a type="button" href="/ordenes/workorder/vaciado/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-success btn-sm">Vaciado</a> ' +
+                                    '<a type="button" href="/ordenes/workorder/pinsumos/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-primary btn-sm">Pasar a Insumos</a> ' +
+                                    '<a type="button" href="/ordenes/history/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-info btn-sm">Historial</a> ';
+                            }
+                        },
+                    ],
+                    rowCallback: function (row, data) {
+                        if (data.dia_entrega <= 0) {
+                            $(row).css({'background-color': '#FD8A8A'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                        if (data.dia_entrega == 1) {
+                            $(row).css({'background-color': '#FCF9BE'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                    },
+                });
+            {% elif permiso == "Carga de insumos" %}
+                table = $('#asegurados').DataTable({
+                    "language": lenguaje,
+                    "serverSide": true,
+                    "searching": false,
+                    //"ordering": false,
+                    "scrollX": true,
+                    "pageLength": 25,
+                    "lengthMenu": [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                    "ajax": {
+                        "url": '/rest/ord-list-intra/?format=datatables&permiso={{ permiso }}',
+                        "data": function (d) {
+                            d.desde = desde;
+                            d.hasta = hasta;
+                            d.trabajo = $('#id_orden').val();
+                            d.clinica = clinica;
+                            d.especialidad = especialidad;
+                            d.paciente = paciente;
+                            d.tipoTrabajo = tipoTrabajo;
+                            d.particulares = particulares;
+                            d.odontos = odontos;
+                            d.area = area;
+                            d.estado = estado;
+                        },
+                    },
+                    columnDefs: [
+                        {
+                            "targets": [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13, 14, 15],
+                            "orderable": false
+                        },
+                        {
+                            "targets": [0, 1, 2, 3],
+                            "visible": false
+                        },
+                    ],
+                    "columns": [
+                        {'data': 'estado'},
+                        {'data': 'dia_entrega'},
+                        {'data': 'maxilarInferiorCompleto'},
+                        {'data': 'maxilarSuperiorCompleto'},
+                        {'data': 'id'},
+                        {'data': 'orden.clinicaExterna.nombreClinica'},
+                        {'data': 'orden.fechaSolicitud'},
+                        {'data': 'fechaEntrega'},
+                        {'data': 'orden.paciente.nombreApellido'},
+                        {'data': 'cantidad'},
+                        {'data': 'color.descripcion'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                var max = '';
+                                if (row.maxilarInferiorCompleto == true) {
+                                    max += 'Inferior';
+                                }
+                                if (row.maxilarSuperiorCompleto == true) {
+                                    max += ' Superior';
+                                }
+                                return max;
+                            }
+                        },
+                        {'data': 'dientes'},
+                        {'data': 'trabajo'},
+                        {'data': 'orden.metodoEnvio'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                var btn = '';
+                                btn += '<a type="button" href="/ordenes/workorder/rinsumos/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-warning btn-sm">Rechazar</a> ' +
+                                    '<a type="button" href="/ordenes/workorder/insumos/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-primary btn-sm">Insumos</a> ' +
+                                    '<a type="button" href="/ordenes/history/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-info btn-sm">Historial</a> ';
+                                if (row.estado == "INSUMO BANDEJA ENTRADA" || row.estado == "REANUDADO EN INSUMO") {
+                                    btn += '<a type="button" href="/ordenes/workorder/ipausar/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-danger btn-sm">Pausar</a> ';
+                                }
+                                if (row.estado == "PAUSADO EN INSUMO") {
+                                    btn += '<a type="button" href="/ordenes/workorder/ireanudar/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-success btn-sm">Reanudar</a> ';
+                                }
+                                return btn;
+                            }
+                        },
+                    ],
+                    rowCallback: function (row, data) {
+                        if (data.dia_entrega <= 0) {
+                            $(row).css({'background-color': '#FD8A8A'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                        if (data.dia_entrega == 1) {
+                            $(row).css({'background-color': '#FCF9BE'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                    },
+                });
+            {% elif permiso == "Supervisor Tecnico" %}
+                table = $('#asegurados').DataTable({
+                    "language": lenguaje,
+                    "serverSide": true,
+                    "searching": false,
+                    //"ordering": false,
+                    "scrollX": true,
+                    "pageLength": 25,
+                    "lengthMenu": [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                    "ajax": {
+                        "url": '/rest/ord-list-intra/?format=datatables&permiso={{ permiso }}&usuario={{ request.user.pk }}',
+                        "data": function (d) {
+                            d.desde = desde;
+                            d.hasta = hasta;
+                            d.trabajo = $('#id_orden').val();
+                            d.clinica = clinica;
+                            d.especialidad = especialidad;
+                            d.paciente = paciente;
+                            d.tipoTrabajo = tipoTrabajo;
+                            d.insumos = insumos;
+                            d.particulares = particulares;
+                            d.odontos = odontos;
+                            d.area = area;
+                            d.estado = estado;
+                        },
+                    },
+                    columnDefs: [
+                        {
+                            "targets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 17, 18, 19, 20, 21, 22, 23, 24],
+                            "orderable": false
+                        },
+                        {
+                            "targets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                            "visible": false
+                        },
+                    ],
+                    "columns": [
+                        {'data': 'estado'},
+                        {'data': 'categoria.descripcion'},
+                        {'data': 'trabajo'},
+                        {'data': 'etapaActual'},
+                        {'data': 'etapaOrden'},
+                        {'data': 'can_etapas'},
+                        {'data': 'siguiente'},
+                        {'data': 'siguiente_etapa'},
+                        {'data': 'dia_entrega'},
+                        {'data': 'maxilarInferiorCompleto'},
+                        {'data': 'maxilarSuperiorCompleto'},
+                        {'data': 'id'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                var btn = '';
+                                if (row.etapaActual == null) {
+                                    btn += '<a type="button" href="/ordenes/workorder/rproduccion/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-warning btn-sm">Rechazar</a> ';
+                                }
+                                btn += '<a type="button" href="/ordenes/workorder/insumos/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-primary btn-sm">Insumos</a> ' +
+                                    '<a type="button" href="/ordenes/history/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '" class="btn btn-info btn-sm">Historial</a> ';
+                                //heredado de insumos
+                                if (row.estado == "INSUMO BANDEJA ENTRADA" || row.estado == "REANUDADO EN INSUMO") {
+                                    btn += '<a type="button" href="/ordenes/workorder/ipausar/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-danger btn-sm">Pausar</a> ';
+                                }
+                                if (row.estado == "PAUSADO EN INSUMO") {
+                                    btn += '<a type="button" href="/ordenes/workorder/ireanudar/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-success btn-sm">Reanudar</a> ';
+                                }
+                                if (row.estado == "ENTREGADO A LABORATORIO") {
+                                    btn += '<a type="button" href="/ordenes/workorder/asignart/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-success btn-sm">Asignar Técnico</a> ';
+                                }
+                                ;
+                                if (row.etapaActual != row.siguiente_etapa && row.siguiente != row.can_etapas) {
+                                    if (row.estado == "TECNICO ASIGNADO" || row.estado == "ENTREGADO A LABORATORIO" || row.estado == "TECNICO ASIGNADO") {
+                                        btn += '<a type="button" href="/ordenes/workorder/iniciar/' + row.id + '/' + row.siguiente_etapa + '/' + row.siguiente + '/{{ request.user.pk }}/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-success btn-sm">Iniciar en ' + row.siguiente_etapa + '</a> ';
+                                    } else if (row.estado == "TRABAJO INICIADO" && row.etapaActual != row.siguiente_etapa) {
+                                        btn += '<a type="button" href="/ordenes/workorder/finalizar/' + row.id + '/' + row.etapaActual + '/' + row.etapaOrden + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-success btn-sm">Finalizar en ' + row.etapaActual + '</a> ';
+                                    } else if (row.estado == "TRABAJO FINALIZADO" && row.etapaActual != row.siguiente_etapa) {
+                                        btn += '<a type="button" href="/ordenes/workorder/enviar/' + row.id + '/' + row.siguiente_etapa + '/' + row.siguiente + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-success btn-sm">Enviar a ' + row.siguiente_etapa + '</a> ';
+                                    }
+                                    ;
+                                } else if (row.etapaActual != row.siguiente_etapa && row.siguiente == row.can_etapas) {
+                                    if (row.estado == "TECNICO ASIGNADO" || row.estado == "ENTREGADO A LABORATORIO" || row.estado == "TECNICO ASIGNADO") {
+                                        btn += '<a type="button" href="/ordenes/workorder/iniciar/' + row.id + '/' + row.siguiente_etapa + '/' + row.siguiente + '/{{ request.user.pk }}/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-success btn-sm">Iniciar en ' + row.siguiente_etapa + '</a> ';
+                                    } else if (row.estado == "TRABAJO INICIADO" && row.etapaActual != row.siguiente_etapa) {
+                                        btn += '<a type="button" href="/ordenes/workorder/finalizar/' + row.id + '/' + row.etapaActual + '/' + row.etapaOrden + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-success btn-sm">Finalizar en ' + row.etapaActual + '</a> ';
+                                    } else if (row.estado == "TRABAJO FINALIZADO" && row.etapaActual != row.siguiente_etapa) {
+                                        btn += '<a type="button" href="/ordenes/workorder/enviar/' + row.id + '/' + row.siguiente_etapa + '/' + row.siguiente + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-success btn-sm">Enviar a ' + row.siguiente_etapa + '</a> ';
+                                    }
+                                    ;
+                                } else if (row.etapaActual == row.siguiente_etapa && row.siguiente == row.can_etapas) {
+                                    if (row.estado == "TRABAJO FINALIZADO") {
+                                        btn += '<a type="button" href="/ordenes/workorder/elogistica/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-success btn-sm">Enviar a Logística</a> ';
+                                    } else if (row.estado == "ENTREGADO A LABORATORIO" && row.etapaActual == row.siguiente_etapa || row.estado == "TECNICO ASIGNADO") {
+                                        btn += '<a type="button" href="/ordenes/workorder/iniciar/' + row.id + '/' + row.siguiente_etapa + '/' + row.siguiente + '/{{ request.user.pk }}/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-success btn-sm">Iniciar en ' + row.siguiente_etapa + '</a> ';
+                                    } else if (row.estado == "TRABAJO INICIADO" && row.etapaActual == row.siguiente_etapa) {
+                                        btn += '<a type="button" href="/ordenes/workorder/finalizar/' + row.id + '/' + row.etapaActual + '/' + row.etapaOrden + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&insumos=' + insumos + '&area=' + area + '&estado=' + estado +'" class="btn btn-success btn-sm">Finalizar en ' + row.etapaActual + '</a> ';
+                                    }
+                                    ;
+                                }
+                                return btn;
+                            }
+                        },
+                        {'data': 'estado'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                return '';
+                            }
+                        },
+                        {'data': 'orden.fechaSolicitud'},
+                        {'data': 'fechaEntrega'},
+                        {'data': 'orden.clinicaExterna.nombreClinica'},
+                        {'data': 'orden.paciente.nombreApellido'},
+                        {'data': 'cantidad'},
+                        {'data': 'color.descripcion'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                var max = '';
+                                if (row.maxilarInferiorCompleto == true) {
+                                    max += 'Inferior';
+                                }
+                                if (row.maxilarSuperiorCompleto == true) {
+                                    max += ' Superior';
+                                }
+                                return max;
+                            }
+                        },
+                        {'data': 'dientes'},
+                        {'data': 'trabajo'},
+                        {'data': 'ultimo_cambio'},
+                    ],
+                    rowCallback: function (row, data) {
+                        if (data.dia_entrega <= 0) {
+                            $(row).css({'background-color': '#FD8A8A'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                        if (data.dia_entrega == 1) {
+                            $(row).css({'background-color': '#FCF9BE'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                    },
+                });
+            {% elif permiso == "Tecnico" %}
+                table = $('#asegurados').DataTable({
+                    "language": lenguaje,
+                    "serverSide": true,
+                    "searching": false,
+                    //"ordering": false,
+                    "scrollX": true,
+                    "pageLength": 25,
+                    "lengthMenu": [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                    "ajax": {
+                        "url": '/rest/ord-list-intra/?format=datatables&permiso={{ permiso }}&usuario={{ request.user.pk }}',
+                        "data": function (d) {
+                            desde = $('#id_desde').val();
+                            hasta = $('#id_hasta').val();
+                            d.desde = desde;
+                            d.hasta = hasta;
+                            d.trabajo = $('#id_orden').val();
+                            d.clinica = clinica;
+                            d.especialidad = especialidad;
+                            d.paciente = paciente;
+                            d.tipoTrabajo = tipoTrabajo;
+                            d.particulares = particulares;
+                            d.odontos = odontos;
+                            d.area = area;
+                            d.estado = estado;
+                        },
+                    },
+                    columnDefs: [
+                        {
+                            "targets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 17, 18, 19, 20, 21, 22, 23, 24],
+                            "orderable": false
+                        },
+                        {
+                            "targets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                            "visible": false
+                        },
+                    ],
+                    "columns": [
+                        {'data': 'estado'},
+                        {'data': 'categoria.descripcion'},
+                        {'data': 'trabajo'},
+                        {'data': 'etapaActual'},
+                        {'data': 'etapaOrden'},
+                        {'data': 'can_etapas'},
+                        {'data': 'siguiente'},
+                        {'data': 'siguiente_etapa'},
+                        {'data': 'dia_entrega'},
+                        {'data': 'maxilarInferiorCompleto'},
+                        {'data': 'maxilarSuperiorCompleto'},
+                        {'data': 'id'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                var btn = '';
+                                //if (row.etapaActual == null){
+                                //    btn += '<a type="button" href="/ordenes/workorder/rproduccion/'+row.id+'/" class="btn btn-warning btn-sm">Rechazar</a> ';
+                                //}
+                                // btn += '<a type="button" href="/ordenes/workorder/insumos/' + row.id + '/" class="btn btn-primary btn-sm">Insumos</a> ' +
+                                btn += '<a type="button" href="/ordenes/history/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-info btn-sm">Historial</a> ';
+                                if (row.etapaActual != row.siguiente_etapa && row.siguiente != row.can_etapas) {
+                                    if (row.estado == "TECNICO ASIGNADO" || row.estado == "ENTREGADO A LABORATORIO" || row.estado == "TECNICO ASIGNADO") {
+                                        btn += '<a type="button" href="/ordenes/workorder/iniciar/' + row.id + '/' + row.siguiente_etapa + '/' + row.siguiente + '/{{ request.user.pk }}/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-success btn-sm">Iniciar en ' + row.siguiente_etapa + '</a> ';
+                                    } else if (row.estado == "TRABAJO INICIADO" && row.etapaActual != row.siguiente_etapa) {
+                                        btn += '<a type="button" href="/ordenes/workorder/finalizar/' + row.id + '/' + row.etapaActual + '/' + row.etapaOrden + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-success btn-sm">Finalizar en ' + row.etapaActual + '</a> ';
+                                    } else if (row.estado == "TRABAJO FINALIZADO" && row.etapaActual != row.siguiente_etapa) {
+                                        btn += '<a type="button" href="/ordenes/workorder/enviar/' + row.id + '/' + row.siguiente_etapa + '/' + row.siguiente + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-success btn-sm">Enviar a ' + row.siguiente_etapa + '</a> ';
+                                    }
+                                    ;
+                                } else if (row.etapaActual != row.siguiente_etapa && row.siguiente == row.can_etapas) {
+                                    if (row.estado == "TECNICO ASIGNADO" || row.estado == "ENTREGADO A LABORATORIO" || row.estado == "TECNICO ASIGNADO") {
+                                        btn += '<a type="button" href="/ordenes/workorder/iniciar/' + row.id + '/' + row.siguiente_etapa + '/' + row.siguiente + '/{{ request.user.pk }}/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado +'" class="btn btn-success btn-sm">Iniciar en ' + row.siguiente_etapa + '</a> ';
+                                    } else if (row.estado == "TRABAJO INICIADO" && row.etapaActual != row.siguiente_etapa) {
+                                        btn += '<a type="button" href="/ordenes/workorder/finalizar/' + row.id + '/' + row.etapaActual + '/' + row.etapaOrden + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-success btn-sm">Finalizar en ' + row.etapaActual + '</a> ';
+                                    } else if (row.estado == "TRABAJO FINALIZADO" && row.etapaActual != row.siguiente_etapa) {
+                                        btn += '<a type="button" href="/ordenes/workorder/enviar/' + row.id + '/' + row.siguiente_etapa + '/' + row.siguiente + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-success btn-sm">Enviar a ' + row.siguiente_etapa + '</a> ';
+                                    }
+                                    ;
+                                } else if (row.etapaActual == row.siguiente_etapa && row.siguiente == row.can_etapas) {
+                                    if (row.estado == "TRABAJO FINALIZADO") {
+                                        btn += '<a type="button" href="/ordenes/workorder/elogistica/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-success btn-sm">Enviar a Logística</a> ';
+                                    } else if (row.estado == "ENTREGADO A LABORATORIO" && row.etapaActual == row.siguiente_etapa || row.estado == "TECNICO ASIGNADO") {
+                                        btn += '<a type="button" href="/ordenes/workorder/iniciar/' + row.id + '/' + row.siguiente_etapa + '/' + row.siguiente + '/{{ request.user.pk }}/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-success btn-sm">Iniciar en ' + row.siguiente_etapa + '</a> ';
+                                    } else if (row.estado == "TRABAJO INICIADO" && row.etapaActual == row.siguiente_etapa) {
+                                        btn += '<a type="button" href="/ordenes/workorder/finalizar/' + row.id + '/' + row.etapaActual + '/' + row.etapaOrden + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-success btn-sm">Finalizar en ' + row.etapaActual + '</a> ';
+                                    }
+                                    ;
+                                }
+                                return btn;
+                            }
+                        },
+                        {'data': 'estado'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                return '';
+                            }
+                        },
+                        {'data': 'orden.fechaSolicitud'},
+                        {'data': 'fechaEntrega'},
+                        {'data': 'orden.clinicaExterna.nombreClinica'},
+                        {'data': 'orden.paciente.nombreApellido'},
+                        {'data': 'cantidad'},
+                        {'data': 'color.descripcion'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                var max = '';
+                                if (row.maxilarInferiorCompleto == true) {
+                                    max += 'Inferior';
+                                }
+                                if (row.maxilarSuperiorCompleto == true) {
+                                    max += ' Superior';
+                                }
+                                return max;
+                            }
+                        },
+                        {'data': 'dientes'},
+                        {'data': 'trabajo'},
+                        {'data': 'ultimo_cambio'},
+                    ],
+                    rowCallback: function (row, data) {
+                        if (data.dia_entrega <= 0) {
+                            $(row).css({'background-color': '#FD8A8A'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                        if (data.dia_entrega == 1) {
+                            $(row).css({'background-color': '#FCF9BE'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                    },
+                });
+            {% elif permiso == "Administrador" %}
+                table = $('#asegurados').DataTable({
+                    "language": lenguaje,
+                    "serverSide": true,
+                    "searching": false,
+                    //"ordering": false,
+                    "scrollX": true,
+                    "pageLength": 25,
+                    "lengthMenu": [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                    "ajax": {
+                        "url": '/rest/ord-list-intra/?format=datatables&permiso={{ permiso }}&usuario={{ request.user.pk }}',
+                        "data": function (d) {
+                            d.desde = desde;
+                            d.hasta = hasta;
+                            d.trabajo = $('#id_orden').val();
+                            d.clinica = clinica;
+                            d.especialidad = especialidad;
+                            d.paciente = paciente;
+                            d.tipoTrabajo = tipoTrabajo;
+                            d.particulares = particulares;
+                            d.odontos = odontos;
+                            d.area = area;
+                            d.estado = estado;
+                        },
+                    },
+                    columnDefs: [
+                        {
+                            "targets": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 17, 18, 19, 20, 21, 22, 23, 24],
+                            "orderable": false
+                        },
+                        {
+                            "targets": [0, 1, 2, 4, 5, 6, 7, 8, 9, 10],
+                            "visible": false
+                        },
+                    ],
+                    "columns": [
+                        {'data': 'estado'},
+                        {'data': 'categoria.descripcion'},
+                        {'data': 'trabajo'},
+                        {'data': 'etapaActual'},
+                        {'data': 'etapaOrden'},
+                        {'data': 'can_etapas'},
+                        {'data': 'siguiente'},
+                        {'data': 'siguiente_etapa'},
+                        {'data': 'dia_entrega'},
+                        {'data': 'maxilarInferiorCompleto'},
+                        {'data': 'maxilarSuperiorCompleto'},
+                        {'data': 'id'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                var btn = '<a type="button" href="/ordenes/history/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-info btn-sm">Historial</a> ';
+                                if (row.estado == "ENTREGADO A LABORATORIO" || row.estado == "ECNICO ASIGNADO" ||
+                                    row.estado == "TRABAJO INICIADO" || row.estado == "TRABAJO FINALIZADO") {
+                                    btn += '<a type="button" href="/ordenes/workorder/sector/' + row.id + '/?especialidad=' + especialidad + '&clinica=' + clinica + '&tipoTrabajo=' + tipoTrabajo + '&paciente=' + paciente + '&desde=' + desde + '&hasta=' + hasta + '&particulares=' + particulares + '&odontos=' + odontos + '&area=' + area + '&estado=' + estado + '" class="btn btn-success btn-sm">Cambiar Sector de Producción</a> ';
+                                }
+                                return btn;
+                            }
+                        },
+                        {'data': 'estado'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                return '';
+                            }
+                        },
+                        {'data': 'orden.fechaSolicitud'},
+                        {'data': 'fechaEntrega'},
+                        {'data': 'orden.clinicaExterna.nombreClinica'},
+                        {'data': 'orden.paciente.nombreApellido'},
+                        {'data': 'cantidad'},
+                        {'data': 'color.descripcion'},
+                        {
+                            'data': function (row, type, val, meta) {
+                                var max = '';
+                                if (row.maxilarInferiorCompleto == true) {
+                                    max += 'Inferior';
+                                }
+                                if (row.maxilarSuperiorCompleto == true) {
+                                    max += ' Superior';
+                                }
+                                return max;
+                            }
+                        },
+                        {'data': 'dientes'},
+                        {'data': 'trabajo'},
+                        {'data': 'ultimo_cambio'},
+                    ],
+                    rowCallback: function (row, data) {
+                        if (data.dia_entrega <= 0) {
+                            $(row).css({'background-color': '#FD8A8A'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                        if (data.dia_entrega == 1) {
+                            $(row).css({'background-color': '#FCF9BE'});
+                            var tds = row.getElementsByTagName("td");
+
+                            for (var i = 0; i < tds.length; ++i) {
+                                tds[i].style.color = "black";
+                            }
+                        }
+                    },
+                });
+            {% endif %}
+        });
+    </script>
+{% endblock %}

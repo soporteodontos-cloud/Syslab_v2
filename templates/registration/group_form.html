@@ -1,0 +1,25 @@
+{% extends "menu.html" %}
+{% load tags %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load bootstrap4 %}
+
+{% bootstrap_css %}
+{% bootstrap_javascript jquery='full' %}
+
+{% block title %} GRUPOS {% endblock %}
+
+{% block content %}
+    {{ form.media }}
+    <script src="{% static 'django_select2/django_select2.js' %}"></script>
+    <div class="col-sm-6">
+        <form method="POST" enctype="multipart/form-data" class="form">
+            {% csrf_token %}
+                {% bootstrap_form form %}
+                {% buttons %}
+                    <button type="submit" class="btn btn-success">Guardar</button>
+                    <a class="btn btn-primary" href="{% url 'listado_grupos' %}">Volver</a>
+                {% endbuttons %}
+        </form>
+    </div>
+{% endblock %}

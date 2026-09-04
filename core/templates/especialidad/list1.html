@@ -1,0 +1,63 @@
+{% extends "menu.html" %}
+{% load tags %}
+{% load static %}
+
+{% block title %} Fases {% endblock %}
+
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'css/bootstrapt.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dataTables.bootstrap4.min.css' %}">
+    <script src="{% static 'js/util.js' %}"></script>
+
+    <br>
+    <table id="asegurados" class="table table-striped table-bordered" style="width:100%" data-server-side="true">
+      <thead>
+        <tr>
+          <th>Descripcion</th>
+          <th>Rol</th>
+          <th>realID</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+    </table>
+
+    <script src="{% static 'js/jquery-1.12.4.js' %}"></script>
+  <script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+  <script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
+  <script>
+      $(document).ready(function() {
+          $('#asegurados').DataTable({
+              "language": lenguaje,
+              "serverSide": true,
+              "ajax": '/rest/fas-list-intra/{{ pk }}/?format=datatables',
+              columnDefs: [
+                {
+                    "targets": -1,
+                    "orderable": false,
+                    "searchable": false,
+                },
+                {
+                    "targets": 1,
+                    "defaultContent": ''
+                },
+                {
+                    "targets": 2,
+                    "visible": false
+                },
+
+              ],
+              order: [[2, 'desc']],
+              "columns": [
+                  {'data': 'descripcion'},
+                  {'data': 'rol.name'},
+                  {'data': 'id'},
+                  {'data': function ( row, type, val, meta ) {
+                        return '<a type="button" href="/especialidad/fase_add/'+row.id+'/" class="btn btn-success btn-sm">Tareas</a> ';
+                    }
+                  },
+                ],
+          });
+      });
+  </script>
+{% endblock %}

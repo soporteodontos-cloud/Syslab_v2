@@ -1,0 +1,73 @@
+{% extends "menu.html" %}
+{% load tags %}
+{% load static %}
+
+{% block title %} Orden de Trabajo - Trabajo - Insumos {% endblock %}
+
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'css/bootstrapt.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dataTables.bootstrap4.min.css' %}">
+    <script src="{% static 'js/util.js' %}"></script>
+
+    <div class="form-row">
+        <div class="form-group col-md-2 mb-0">
+            <div class="form-group">
+                <label for="id_doctor">Trabajo Realizado</label>
+                <input type="text" name="trabajo" value="{{ orden.trabajo.descripcion }}" readonly="readonly" maxlength="500" class="form-control" placeholder="Trabajo" title="" id="id_trabajo">
+            </div>
+        </div>
+        <div class="form-group col-md-2 mb-0">
+            <div class="form-group">
+                <label for="id_profesional">Profesional</label>
+                <input type="text" name="profesional" value="" readonly="readonly" maxlength="500" class="form-control" placeholder="Profesional" title="" id="id_profesional">
+            </div>
+        </div>
+        <div class="form-group col-md-2 mb-0">
+            <div class="form-group">
+                <label for="id_doctor">Paciente</label>
+                <input type="text" name="paciente" value="{{ orden.orden.paciente.nombreApellido }}" readonly="readonly" maxlength="500" class="form-control" placeholder="Paciente" title="" id="id_paciente">
+            </div>
+        </div>
+    </div>
+    <br>
+    <table id="asegurados" class="table table-striped table-bordered" style="width:100%" data-server-side="true">
+      <thead>
+        <tr>
+          <th>Insumos</th>
+          <th>Cantidad</th>
+        </tr>
+      </thead>
+    </table>
+        {% if permiso == 'Carga de insumos' or permiso == 'Supervisor Tecnico'%}
+            {% if orden.estado == "INSUMO BANDEJA ENTRADA" or orden.estado == "REANUDADO EN INSUMO" or orden.estado == "PAUSADO EN INSUMO" %}
+                <a class="btn btn-success" href="{% url 'pasarTecnicosAccion' pk=pk %}?especialidad={{ especialidad }}&clinica={{ clinica }}&tipoTrabajo={{ tipoTrabajo }}&paciente={{ paciente }}&desde={{ desde }}&hasta={{ hasta }}&particulares={{ particulares }}&odontos={{ odontos }}&insumos={{ insumos }}&area={{ area }}&estado={{ estado }}">Pasar a tecnicos</a>
+            {% endif %}
+        {% endif %}
+        <a class="btn btn-primary" href="{% url 'orden_list' %}?especialidad={{ especialidad }}&clinica={{ clinica }}&tipoTrabajo={{ tipoTrabajo }}&paciente={{ paciente }}&desde={{ desde }}&hasta={{ hasta }}&particulares={{ particulares }}&odontos={{ odontos }}&insumos={{ insumos }}&area={{ area }}&estado={{ estado }}">Volver</a>
+
+    <script src="{% static 'js/jquery-1.12.4.js' %}"></script>
+  <script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+  <script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
+  <script>
+      $(document).ready(function() {
+          var trabajo = {{ orden.trabajo_id }};
+          $('#asegurados').DataTable({
+              "language": lenguaje,
+              "serverSide": true,
+              "searching": false,
+              "ajax": '/rest/itt-list-intra/'+trabajo+'/?format=datatables',
+              columnDefs: [
+                {
+                    "targets": 0,
+                    "orderable": false
+                },
+              ],
+              "columns": [
+                  {'data': 'insumo.descripcion'},
+                  {'data': 'cantidad'},
+                ],
+          });
+      });
+  </script>
+{% endblock %}

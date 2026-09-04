@@ -1,0 +1,265 @@
+{% extends "menu.html" %}
+{% load tags %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load bootstrap4 %}
+
+{% bootstrap_css %}
+{% bootstrap_javascript jquery='full' %}
+
+{% block title %} Orden de Trabajo - Particulares {% endblock %}
+
+{% block content %}
+    <link rel="stylesheet" href="{% static 'css/bootstrapt.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jquery.dataTables.min.css' %}">
+    <script src="{% static 'js/util.js' %}"></script>
+
+    <link href="/static/vendor/select2/dist/css/select2.css" type="text/css" media="screen" rel="stylesheet">
+    <link href="/static/admin/css/autocomplete.css" type="text/css" media="screen" rel="stylesheet">
+    <link href="/static/autocomplete_light/select2.css" type="text/css" media="screen" rel="stylesheet">
+    <script src="/static/autocomplete_light/jquery.init.js"></script>
+    <!--script src="/static/vendor/select2/dist/js/select2.full.js"></script>
+    <script src="/static/vendor/select2/dist/js/i18n/es.js"></script-->
+    <script src="/static/autocomplete_light/autocomplete.init.js"></script>
+    <script src="/static/autocomplete_light/forward.js"></script>
+    <script src="/static/autocomplete_light/select2.js"></script>
+    <script src="/static/autocomplete_light/jquery.post-setup.js"></script>
+    <script src="{% static 'js/jquery.cookie.min.js' %}"></script>
+    <script src="{% static 'js/jquery.djangocsrf-0.1.1.min.js' %}"></script>
+    <script src="{% static 'js/moment.min.js' %}"></script>
+
+
+    {{ form.media }}
+    {{ trabajo.media }}
+    <script src="{% static 'js/jquery.formset.js' %}" type="text/JavaScript"></script>
+
+    <style>
+        .select2-container .select2-selection--single {
+            height: 36px;
+        }
+
+        div.dataTables_wrapper div.dataTables_info {
+          padding-top: 0px;
+        }
+
+        .table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {
+          padding: 4px 4px 4px 4px;
+        }
+
+    </style>
+    <form method="POST" enctype="multipart/form-data" id="formulario" class="form">
+        {% csrf_token %}
+
+        <div class="col-xl-12 col-lg-12">
+            <div class="card shadow mb-4">
+                <!--div
+                        class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Datos Principales</h6>
+                </div-->
+                <div class="card-body">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-toggle="tab" href="#tab-1">Trabajos de la orden</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-toggle="tab" href="#tab-2">Anexo de fotos</a>
+                        </li>
+                    </ul>
+
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+
+                        <div id="tab-1" class="tab-pane active"><br>
+                            <div class="form-row">
+                                <div class="col-xl-10 col-lg-10">
+                                    <div class="card shadow mb-4">
+                                        <div
+                                                class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                                            <h6 class="m-0 font-weight-bold text-primary">Completa los datos de las
+                                                ordenes
+                                                de trabajo</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="form-row">
+                                                {% bootstrap_field trabajo.orden %}
+                                                <div class="form-group col-md-3 mb-0">
+                                                    {% bootstrap_field trabajo.express %}
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-3 mb-0">
+                                                    {% bootstrap_field trabajo.categoria %}
+                                                </div>
+                                                <div class="form-group col-md-1 mb-0">
+                                                </div>
+                                                <div class="form-group col-md-3 mb-0">
+                                                    {% bootstrap_field trabajo.trabajo %}
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-3 mb-0">
+                                                    {% bootstrap_field trabajo.color %}
+                                                </div>
+                                                <div class="form-group col-md-1 mb-0">
+                                                </div>
+                                                <div class="form-group col-md-3 mb-0">
+                                                    {% bootstrap_field trabajo.dientes %}
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-3 mb-0">
+                                                    {% bootstrap_field trabajo.maxilarSuperiorCompleto %}
+                                                </div>
+                                                <div class="form-group col-md-3 mb-0">
+                                                    {% bootstrap_field trabajo.maxilarInferiorCompleto %}
+                                                </div>
+                                            </div>
+                                             <div class="form-row">
+                                                <div class="form-group col-md-3 mb-0">
+                                                    {% bootstrap_field trabajo.fechaEntrega %}
+                                                </div>
+                                                <div class="form-group col-md-1 mb-0">
+                                                </div>
+                                                <div class="form-group col-md-3 mb-0">
+                                                    {% bootstrap_field trabajo.modoEnvio %}
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                <div class="form-group col-md-8 mb-0">
+                                                    {% bootstrap_field trabajo.observacion %}
+                                                </div>
+                                            </div>
+                                            <div class="form-row">
+                                                {% if main.estado == 'PEDIDO NO CONFIRMADO' %}
+                                                    <a class="btn btn-sm btn-danger" onclick="saveTrabajo()">Agregar</a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <table id="trabajos" class="table table-striped " style="width:100%" data-server-side="true">
+                                        <thead>
+                                            <th></th>
+                                            <th></th>
+                                            <th>Nro</th>
+                                            <th>Express</th>
+                                            <th>Cantidad</th>
+                                            <th>Marca</th>
+                                            <th>Color</th>
+                                            <th>Especialidad</th>
+                                            <th>Trabajo</th>
+                                            <th>Fecha Entrega</th>
+                                            <th>Observacion</th>
+                                            <th>Dientes</th>
+                                            <th>Max. Superior</th>
+                                            <th>Max. Inferior</th>
+                                            <th>Se envía</th>
+                                            <th></th>
+                                        </thead>
+                                    </table>
+                                </div>
+                                <div class="col-xl-2 col-lg-2">
+                                    <img src="{% static 'images/modelo_dientes.jpeg' %}" style="width: 100%;">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tab-2" class="tab-pane fade"><br>
+                                {{ formset.management_form }}
+                                {{ formset.non_form_errors }}
+                                <table class="table table-striped" style="width:50%">
+                                    <thead>
+                                        <th>Foto</th>
+                                        <th></th>
+                                    </thead>
+                                    <tbody>
+                                    {% for form in formset %}
+                                        <tr class="{{ formset.prefix }}">
+                                            {{ form.id }}
+                                            <td width="350px" >{{ form.foto|as_crispy_field }}</td>
+                                            <td >{{ form.DELETE }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-12 col-lg-12">
+            <div class="card shadow mb-4">
+                <div
+                        class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Datos Principales</h6>
+                </div>
+                <div class="card-body">
+                    <div class="form-row">
+                        {% bootstrap_field form.clinicaExterna %}
+                        {% bootstrap_field form.paciente %}
+                        {% bootstrap_field form.vendedor %}
+                        <div class="form-group col-md-3 mb-0">
+                            {% bootstrap_field form.estado %}
+                        </div>
+                        <div class="form-group col-md-4 mb-0">
+                            {% bootstrap_field form.clinicaExternaNombre %}
+                        </div>
+                        <div class="form-group col-md-2 mb-0">
+                            {% bootstrap_field form.envioCourrier %}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-2 mb-0">
+                            {% bootstrap_field form.fechaSolicitud %}
+                        </div>
+                        <div class="form-group col-md-3 mb-0">
+                            {% bootstrap_field form.metodoEnvio %}
+                        </div>
+                        <div class="form-group col-md-2 mb-0">
+                            {% bootstrap_field form.trabajoRepetido %}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-4 mb-0">
+                            {% bootstrap_field form.pacienteNombre %}
+                        </div>
+                        <div class="form-group col-md-4 mb-0">
+                            {% bootstrap_field form.vendedorNombre %}
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-8 mb-0">
+                            {% bootstrap_field form.observacion %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% buttons %}
+            {% if main.estado == 'PEDIDO NO CONFIRMADO' %}
+                <a onclick="guardar();" class="btn btn-success">{% if permisos == "Logistica" %}Confirmar Pedido y Enviar a Yeso{% else %}Guardar{% endif %}</a>
+            {% endif %}
+            <a class="btn btn-primary" href="{% url 'orden_delete' pk=main.pk %}?especialidad={{ especialidad }}&clinica={{ clinica }}&tipoTrabajo={{ tipoTrabajo }}&paciente={{ paciente }}&desde={{ desde }}&hasta={{ hasta }}&particulares={{ particulares }}&odontos={{ odontos }}&area={{ area }}&estado={{ estado }}">Borrar</a>
+        {% endbuttons %}
+    </form>
+
+    <script>
+        var orden = null;
+        var usuario = null;
+        var tabletrabajos = null;
+        var estado = '{{ main.estado }}';
+
+        $(document).ready(function() {
+            $.djangocsrf("enable");
+            orden = {{ main.pk }};
+            usuario = {{ request.user.pk }};
+
+        });
+    </script>
+
+    <script src="{% static 'js/ordenes/form2.js' %}" type="text/JavaScript"></script>
+
+    <script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+    <script src="{% static 'js/dataTables.bootstrap4.min.js' %}"></script>
+
+{% endblock %}

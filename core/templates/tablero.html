@@ -1,0 +1,70 @@
+{% extends "menu.html" %}
+{% load tags %}
+{% load static %}
+
+{% block title %} TABLERO {% endblock %}
+
+{% block content %}
+    <!-- Content Row -->
+    <div class="row">
+
+    </div>
+
+    <!-- Content Row -->
+
+    <div class="row">
+
+        <!-- Area Chart>
+        <!--div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div
+                        class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Histórico de Ventas</h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink"
+                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in"
+                             aria-labelledby="dropdownMenuLink">
+                            <div class="dropdown-header">Dropdown Header:</div>
+                            <a class="dropdown-item" href="#">Action</a>
+                            <a class="dropdown-item" href="#">Another action</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#">Something else here</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="myAreaChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div-->
+
+
+    </div>
+
+    <!-- Page level plugins -->
+    <script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
+
+    <script type="text/javascript">
+        /*var monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
+          "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"
+        ];
+        var areaLabel = [''];
+        var areaData = [0];
+        {% for d in chartVentas %}
+            areaLabel.push(monthNames[parseInt('{{d.fecha__month}}')-1]);
+            areaData.push('{{d.sum}}');
+        {% endfor %}
+
+        console.log(areaData);]/
+    </script>
+
+    <!-- Page level custom scripts -->
+    <script src="{% static 'js/demo/chart-area-demo.js' %}"></script>
+    <script src="{% static 'js/demo/chart-pie-demo.js' %}"></script>
+
+{% endblock %}

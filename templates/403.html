@@ -1,0 +1,16 @@
+{% extends "menu.html" %}
+{% load tags %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load bootstrap4 %}
+
+{% bootstrap_css %}
+{% bootstrap_javascript jquery='full' %}
+
+{% block title %} PROHIBIDO {% endblock %}
+
+{% block content %}
+    <div class="col-sm-6">
+        Al parecer no tiene permisos para acceder a esta pantalla.
+    </div>
+{% endblock %}
